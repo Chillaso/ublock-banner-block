@@ -36,6 +36,37 @@ const normalizeBaseUrl = (input: string): string => {
   return url.toString();
 };
 
+const getSuggestedBaseUrl = (input: string): string | null => {
+  try {
+    const url = new URL(input);
+
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+      return null;
+    }
+
+    return `${url.origin}/`;
+  } catch {
+    return null;
+  }
+};
+
+const populateBaseUrlFromActiveTab = async (): Promise<void> => {
+  if (!baseUrlInput || baseUrlInput.value.trim()) {
+    return;
+  }
+
+  try {
+    const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    const suggestedBaseUrl = activeTab?.url ? getSuggestedBaseUrl(activeTab.url) : null;
+
+    if (suggestedBaseUrl) {
+      baseUrlInput.value = suggestedBaseUrl;
+    }
+  } catch (error) {
+    console.error('Failed to read the active tab URL.', error);
+  }
+};
+
 const renderRules = async (): Promise<void> => {
   if (!ruleListElement || !emptyStateElement) {
     return;
@@ -49,21 +80,33 @@ const renderRules = async (): Promise<void> => {
   rules.forEach((rule) => {
     const listItem = document.createElement('li');
     const topLine = document.createElement('div');
+    const titleGroup = document.createElement('div');
     const urlElement = document.createElement('p');
     const metaElement = document.createElement('p');
     const deleteButton = document.createElement('button');
 
     listItem.className = 'rule-item';
     topLine.className = 'rule-topline';
+    titleGroup.className = 'rule-title-group';
     urlElement.className = 'rule-url';
     metaElement.className = 'rule-meta';
     deleteButton.className = 'delete-button';
-
-    urlElement.textContent = rule.baseUrl;
-    metaElement.textContent = toSelectorPreview(rule.selectors);
     deleteButton.type = 'button';
     deleteButton.textContent = 'Delete';
     deleteButton.setAttribute('aria-label', `Delete rule for ${rule.baseUrl}`);
+
+    urlElement.textContent = rule.baseUrl;
+    metaElement.textContent = toSelectorPreview(rule.selectors);
+    titleGroup.append(urlElement);
+
+    if (rule.isReadOnly) {
+      const badgeElement = document.createElement('span');
+
+      badgeElement.className = 'rule-badge';
+      badgeElement.textContent = 'Built-in';
+      badgeElement.setAttribute('aria-label', `Built-in rule for ${rule.baseUrl}`);
+      titleGroup.append(badgeElement);
+    }
 
     deleteButton.addEventListener('click', async () => {
       try {
@@ -76,7 +119,7 @@ const renderRules = async (): Promise<void> => {
       }
     });
 
-    topLine.append(urlElement, deleteButton);
+    topLine.append(titleGroup, deleteButton);
     listItem.append(topLine, metaElement);
     ruleListElement.append(listItem);
   });
@@ -140,6 +183,8 @@ if (form) {
     void handleSubmit(event);
   });
 }
+
+void populateBaseUrlFromActiveTab();
 
 void renderRules().catch((error) => {
   console.error('Failed to render rules.', error);

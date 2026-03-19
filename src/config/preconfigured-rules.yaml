@@ -1,0 +1,9 @@
+rules:
+  - id: builtin-diariodejerez
+    baseUrl: https://www.diariodejerez.es/
+    selectors: |
+      body > div.fc-ab-root
+  - id: builtin-xataka
+    baseUrl: https://www.xataka.com/
+    selectors: |
+      #gtm-ab-overlay

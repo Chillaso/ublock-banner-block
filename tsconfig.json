@@ -4,6 +4,7 @@
     "useDefineForClassFields": true,
     "module": "ESNext",
     "moduleResolution": "Bundler",
+    "allowImportingTsExtensions": true,
     "lib": ["DOM", "DOM.Iterable", "ES2022"],
     "strict": true,
     "noEmit": true,
@@ -11,5 +12,5 @@
     "allowSyntheticDefaultImports": true,
     "types": ["chrome"]
   },
-  "include": ["manifest.config.ts", "src/**/*.ts"]
+  "include": ["manifest.config.ts", "src/**/*.ts", "src/**/*.d.ts"]
 }
