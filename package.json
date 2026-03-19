@@ -1,0 +1,17 @@
+{
+  "name": "ublock-banner-block",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "watch": "vite build --watch"
+  },
+  "devDependencies": {
+    "@crxjs/vite-plugin": "^2.2.0",
+    "@types/chrome": "^0.1.29",
+    "typescript": "^5.8.2",
+    "vite": "^6.2.1"
+  }
+}

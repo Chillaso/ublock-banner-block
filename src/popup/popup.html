@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>uBlock Banner Block</title>
+    <script type="module" src="./popup.ts"></script>
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="hero-card" aria-labelledby="app-title">
+        <p class="eyebrow">Configured site cleaner</p>
+        <h1 id="app-title">uBlock Banner Block</h1>
+        <p class="hero-copy">
+          Add a base URL and one or more CSS selectors. Matching pages will remove those elements and
+          restore scrolling automatically.
+        </p>
+      </section>
+
+      <section class="panel" aria-labelledby="rule-form-title">
+        <div class="panel-header">
+          <h2 id="rule-form-title">Add rule</h2>
+          <p>Selectors can be separated by commas or new lines.</p>
+        </div>
+
+        <form id="rule-form" class="rule-form">
+          <label class="field">
+            <span>Base URL</span>
+            <input id="base-url" name="baseUrl" type="url" placeholder="https://www.diariodejerez.es/" required />
+          </label>
+
+          <label class="field">
+            <span>CSS selectors</span>
+            <textarea
+              id="selectors"
+              name="selectors"
+              rows="5"
+              placeholder="body > div.fc-ab-root\n.modal-paywall, .overlay-adblock"
+              required
+            ></textarea>
+          </label>
+
+          <button class="primary-button" type="submit">Save rule</button>
+        </form>
+
+        <p id="status" class="status-message" role="status" aria-live="polite"></p>
+      </section>
+
+      <section class="panel" aria-labelledby="rule-list-title">
+        <div class="panel-header">
+          <h2 id="rule-list-title">Saved rules</h2>
+          <p>Rules apply to the exact URL and all child pages under the same path.</p>
+        </div>
+
+        <div id="empty-state" class="empty-state" hidden>
+          No rules yet. Add one above to start removing anti-adblock overlays.
+        </div>
+
+        <ul id="rule-list" class="rule-list" aria-live="polite"></ul>
+      </section>
+    </main>
+  </body>
+</html>
