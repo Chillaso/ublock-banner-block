@@ -40,7 +40,10 @@
             ></textarea>
           </label>
 
-          <button class="primary-button" type="submit">Save rule</button>
+          <div class="form-actions">
+            <button id="submit-button" class="primary-button" type="submit">Save rule</button>
+            <button id="cancel-edit-button" class="secondary-button" type="button" hidden>Cancel edit</button>
+          </div>
         </form>
 
         <p id="status" class="status-message" role="status" aria-live="polite"></p>

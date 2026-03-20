@@ -1,14 +1,19 @@
 import './popup.css';
 
 import type { Rule } from '../types/rule';
-import { addRule, getRules, removeRule } from '../utils/storage';
+import { addRule, getRules, removeRule, updateRule } from '../utils/storage';
 
 const form = document.querySelector<HTMLFormElement>('#rule-form');
 const baseUrlInput = document.querySelector<HTMLInputElement>('#base-url');
 const selectorsInput = document.querySelector<HTMLTextAreaElement>('#selectors');
+const submitButton = document.querySelector<HTMLButtonElement>('#submit-button');
+const cancelEditButton = document.querySelector<HTMLButtonElement>('#cancel-edit-button');
 const statusElement = document.querySelector<HTMLParagraphElement>('#status');
 const ruleListElement = document.querySelector<HTMLUListElement>('#rule-list');
 const emptyStateElement = document.querySelector<HTMLDivElement>('#empty-state');
+const ruleFormTitle = document.querySelector<HTMLHeadingElement>('#rule-form-title');
+
+let editingRuleId: string | null = null;
 
 const toSelectorPreview = (selectors: string): string => {
   return selectors
@@ -51,7 +56,7 @@ const getSuggestedBaseUrl = (input: string): string | null => {
 };
 
 const populateBaseUrlFromActiveTab = async (): Promise<void> => {
-  if (!baseUrlInput || baseUrlInput.value.trim()) {
+  if (!baseUrlInput || baseUrlInput.value.trim() || editingRuleId) {
     return;
   }
 
@@ -65,6 +70,53 @@ const populateBaseUrlFromActiveTab = async (): Promise<void> => {
   } catch (error) {
     console.error('Failed to read the active tab URL.', error);
   }
+};
+
+const resetFormState = (): void => {
+  editingRuleId = null;
+
+  if (form) {
+    form.reset();
+  }
+
+  if (ruleFormTitle) {
+    ruleFormTitle.textContent = 'Add rule';
+  }
+
+  if (submitButton) {
+    submitButton.textContent = 'Save rule';
+  }
+
+  if (cancelEditButton) {
+    cancelEditButton.hidden = true;
+  }
+
+  void populateBaseUrlFromActiveTab();
+};
+
+const startEditingRule = (rule: Rule): void => {
+  if (!baseUrlInput || !selectorsInput) {
+    return;
+  }
+
+  editingRuleId = rule.id;
+  baseUrlInput.value = rule.baseUrl;
+  selectorsInput.value = rule.selectors;
+
+  if (ruleFormTitle) {
+    ruleFormTitle.textContent = 'Edit rule';
+  }
+
+  if (submitButton) {
+    submitButton.textContent = 'Update rule';
+  }
+
+  if (cancelEditButton) {
+    cancelEditButton.hidden = false;
+  }
+
+  setStatus('Editing rule. Update the fields and save your changes.');
+  baseUrlInput.focus();
 };
 
 const renderRules = async (): Promise<void> => {
@@ -83,6 +135,7 @@ const renderRules = async (): Promise<void> => {
     const titleGroup = document.createElement('div');
     const urlElement = document.createElement('p');
     const metaElement = document.createElement('p');
+    const actionsElement = document.createElement('div');
     const deleteButton = document.createElement('button');
 
     listItem.className = 'rule-item';
@@ -90,6 +143,7 @@ const renderRules = async (): Promise<void> => {
     titleGroup.className = 'rule-title-group';
     urlElement.className = 'rule-url';
     metaElement.className = 'rule-meta';
+    actionsElement.className = 'rule-actions';
     deleteButton.className = 'delete-button';
     deleteButton.type = 'button';
     deleteButton.textContent = 'Delete';
@@ -106,11 +160,27 @@ const renderRules = async (): Promise<void> => {
       badgeElement.textContent = 'Built-in';
       badgeElement.setAttribute('aria-label', `Built-in rule for ${rule.baseUrl}`);
       titleGroup.append(badgeElement);
+    } else {
+      const editButton = document.createElement('button');
+
+      editButton.className = 'edit-button';
+      editButton.type = 'button';
+      editButton.textContent = 'Edit';
+      editButton.setAttribute('aria-label', `Edit rule for ${rule.baseUrl}`);
+      editButton.addEventListener('click', () => {
+        startEditingRule(rule);
+      });
+      actionsElement.append(editButton);
     }
 
     deleteButton.addEventListener('click', async () => {
       try {
         await removeRule(rule.id);
+
+        if (editingRuleId === rule.id) {
+          resetFormState();
+        }
+
         setStatus('Rule removed.');
         await renderRules();
       } catch (error) {
@@ -119,7 +189,8 @@ const renderRules = async (): Promise<void> => {
       }
     });
 
-    topLine.append(titleGroup, deleteButton);
+    actionsElement.append(deleteButton);
+    topLine.append(titleGroup, actionsElement);
     listItem.append(topLine, metaElement);
     ruleListElement.append(listItem);
   });
@@ -161,16 +232,30 @@ const handleSubmit = async (event: SubmitEvent): Promise<void> => {
     return;
   }
 
-  const rule: Rule = {
-    id: crypto.randomUUID(),
+  const normalizedRule: Rule = {
+    id: editingRuleId ?? crypto.randomUUID(),
     baseUrl: normalizeBaseUrl(baseUrlInput.value),
     selectors: selectorsInput.value.trim(),
   };
 
   try {
-    await addRule(rule);
-    form.reset();
-    setStatus('Rule saved.');
+    if (editingRuleId) {
+      const hasUpdatedRule = await updateRule(normalizedRule);
+
+      if (!hasUpdatedRule) {
+        setStatus('The selected rule is no longer available.', 'error');
+        resetFormState();
+        await renderRules();
+        return;
+      }
+
+      setStatus('Rule updated.');
+    } else {
+      await addRule(normalizedRule);
+      setStatus('Rule saved.');
+    }
+
+    resetFormState();
     await renderRules();
   } catch (error) {
     console.error('Failed to save the rule.', error);
@@ -181,6 +266,13 @@ const handleSubmit = async (event: SubmitEvent): Promise<void> => {
 if (form) {
   form.addEventListener('submit', (event) => {
     void handleSubmit(event);
+  });
+}
+
+if (cancelEditButton) {
+  cancelEditButton.addEventListener('click', () => {
+    resetFormState();
+    setStatus('Edit cancelled.');
   });
 }
 

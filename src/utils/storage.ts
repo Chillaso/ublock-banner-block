@@ -3,6 +3,7 @@ import { getPreconfiguredRules } from './preconfigured-rules.ts';
 
 const DISABLED_BUILTIN_RULE_IDS_STORAGE_KEY = 'disabledBuiltinRuleIds';
 const RULES_STORAGE_KEY = 'rules';
+const builtinRuleIds = new Set(getPreconfiguredRules().map((rule) => rule.id));
 
 type RuleStorageShape = {
   [DISABLED_BUILTIN_RULE_IDS_STORAGE_KEY]?: string[];
@@ -83,9 +84,38 @@ export const addRule = async (rule: Rule): Promise<void> => {
   ]);
 };
 
-export const removeRule = async (ruleId: string): Promise<void> => {
-  const builtinRuleIds = new Set(getPreconfiguredRules().map((rule) => rule.id));
+export const updateRule = async (rule: Rule): Promise<boolean> => {
+  if (builtinRuleIds.has(rule.id)) {
+    return false;
+  }
 
+  const rules = await getStoredRules();
+  let hasUpdatedRule = false;
+
+  const nextRules = rules.map((storedRule) => {
+    if (storedRule.id !== rule.id) {
+      return storedRule;
+    }
+
+    hasUpdatedRule = true;
+
+    return {
+      id: rule.id,
+      baseUrl: rule.baseUrl,
+      selectors: rule.selectors,
+    };
+  });
+
+  if (!hasUpdatedRule) {
+    return false;
+  }
+
+  await saveRules(nextRules);
+
+  return true;
+};
+
+export const removeRule = async (ruleId: string): Promise<void> => {
   if (builtinRuleIds.has(ruleId)) {
     const disabledBuiltinRuleIds = await getDisabledBuiltinRuleIds();
 
