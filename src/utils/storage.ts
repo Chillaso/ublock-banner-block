@@ -56,15 +56,36 @@ const saveDisabledBuiltinRuleIds = async (ruleIds: string[]): Promise<void> => {
 
 const mergeRules = (storedRules: Rule[], disabledBuiltinRuleIds: string[]): Rule[] => {
   const disabledRuleIdSet = new Set(disabledBuiltinRuleIds);
-  const builtinRules = getPreconfiguredRules().filter((rule) => !disabledRuleIdSet.has(rule.id));
+  const mergedRules = new Map<string, Rule>();
 
-  return [...builtinRules, ...storedRules];
+  getPreconfiguredRules()
+    .filter((rule) => !disabledRuleIdSet.has(rule.id))
+    .forEach((rule) => {
+      mergedRules.set(rule.id, rule);
+    });
+
+  storedRules.forEach((rule) => {
+    mergedRules.set(rule.id, rule);
+  });
+
+  return [...mergedRules.values()];
 };
 
 export const getRules = async (): Promise<Rule[]> => {
   const [storedRules, disabledBuiltinRuleIds] = await Promise.all([getStoredRules(), getDisabledBuiltinRuleIds()]);
 
   return mergeRules(storedRules, disabledBuiltinRuleIds);
+};
+
+export const getRuleById = async (ruleId: string): Promise<Rule | null> => {
+  const rules = await getRules();
+  const rule = rules.find((entry) => entry.id === ruleId);
+
+  if (!rule) {
+    return null;
+  }
+
+  return rule;
 };
 
 export const saveRules = async (rules: Rule[]): Promise<void> => {
@@ -85,11 +106,7 @@ export const addRule = async (rule: Rule): Promise<void> => {
 };
 
 export const updateRule = async (rule: Rule): Promise<boolean> => {
-  if (builtinRuleIds.has(rule.id)) {
-    return false;
-  }
-
-  const rules = await getStoredRules();
+  const [rules, disabledBuiltinRuleIds] = await Promise.all([getStoredRules(), getDisabledBuiltinRuleIds()]);
   let hasUpdatedRule = false;
 
   const nextRules = rules.map((storedRule) => {
@@ -106,6 +123,24 @@ export const updateRule = async (rule: Rule): Promise<boolean> => {
     };
   });
 
+  if (builtinRuleIds.has(rule.id)) {
+    const rulesToSave = hasUpdatedRule
+      ? nextRules
+      : [
+          ...nextRules,
+          {
+            id: rule.id,
+            baseUrl: rule.baseUrl,
+            selectors: rule.selectors,
+          },
+        ];
+    const nextDisabledBuiltinRuleIds = disabledBuiltinRuleIds.filter((disabledRuleId) => disabledRuleId !== rule.id);
+
+    await Promise.all([saveRules(rulesToSave), saveDisabledBuiltinRuleIds(nextDisabledBuiltinRuleIds)]);
+
+    return true;
+  }
+
   if (!hasUpdatedRule) {
     return false;
   }
@@ -117,9 +152,13 @@ export const updateRule = async (rule: Rule): Promise<boolean> => {
 
 export const removeRule = async (ruleId: string): Promise<void> => {
   if (builtinRuleIds.has(ruleId)) {
-    const disabledBuiltinRuleIds = await getDisabledBuiltinRuleIds();
+    const [rules, disabledBuiltinRuleIds] = await Promise.all([getStoredRules(), getDisabledBuiltinRuleIds()]);
+    const nextRules = rules.filter((rule) => rule.id !== ruleId);
 
-    await saveDisabledBuiltinRuleIds([...disabledBuiltinRuleIds, ruleId]);
+    await Promise.all([
+      saveRules(nextRules),
+      saveDisabledBuiltinRuleIds([...disabledBuiltinRuleIds, ruleId]),
+    ]);
     return;
   }
 

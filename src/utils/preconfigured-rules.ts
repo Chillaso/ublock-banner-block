@@ -22,7 +22,6 @@ const normalizeRule = (rule: YamlRule): Rule | null => {
     id: rule.id,
     baseUrl: rule.baseUrl,
     selectors: rule.selectors,
-    isReadOnly: true,
   };
 };
 

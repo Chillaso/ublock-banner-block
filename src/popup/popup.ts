@@ -1,7 +1,7 @@
 import './popup.css';
 
 import type { Rule } from '../types/rule';
-import { addRule, getRules, removeRule, updateRule } from '../utils/storage';
+import { addRule, getRuleById, getRules, removeRule, updateRule } from '../utils/storage';
 
 const form = document.querySelector<HTMLFormElement>('#rule-form');
 const baseUrlInput = document.querySelector<HTMLInputElement>('#base-url');
@@ -55,6 +55,20 @@ const getSuggestedBaseUrl = (input: string): string | null => {
   }
 };
 
+const setFormFields = (baseUrl: string, selectors: string): void => {
+  if (baseUrlInput) {
+    baseUrlInput.value = baseUrl;
+  }
+
+  if (selectorsInput) {
+    selectorsInput.value = selectors;
+  }
+};
+
+const clearFormFields = (): void => {
+  setFormFields('', '');
+};
+
 const populateBaseUrlFromActiveTab = async (): Promise<void> => {
   if (!baseUrlInput || baseUrlInput.value.trim() || editingRuleId) {
     return;
@@ -74,10 +88,7 @@ const populateBaseUrlFromActiveTab = async (): Promise<void> => {
 
 const resetFormState = (): void => {
   editingRuleId = null;
-
-  if (form) {
-    form.reset();
-  }
+  clearFormFields();
 
   if (ruleFormTitle) {
     ruleFormTitle.textContent = 'Add rule';
@@ -94,14 +105,24 @@ const resetFormState = (): void => {
   void populateBaseUrlFromActiveTab();
 };
 
-const startEditingRule = (rule: Rule): void => {
+const startEditingRule = async (ruleId: string): Promise<void> => {
   if (!baseUrlInput || !selectorsInput) {
     return;
   }
 
+  const rule = await getRuleById(ruleId);
+
+  if (!rule) {
+    setStatus('The selected rule is no longer available.', 'error');
+    if (editingRuleId === ruleId) {
+      resetFormState();
+    }
+    await renderRules();
+    return;
+  }
+
   editingRuleId = rule.id;
-  baseUrlInput.value = rule.baseUrl;
-  selectorsInput.value = rule.selectors;
+  setFormFields(rule.baseUrl, rule.selectors);
 
   if (ruleFormTitle) {
     ruleFormTitle.textContent = 'Edit rule';
@@ -131,19 +152,20 @@ const renderRules = async (): Promise<void> => {
 
   rules.forEach((rule) => {
     const listItem = document.createElement('li');
-    const topLine = document.createElement('div');
-    const titleGroup = document.createElement('div');
     const urlElement = document.createElement('p');
-    const metaElement = document.createElement('p');
     const actionsElement = document.createElement('div');
+    const metaElement = document.createElement('p');
+    const editButton = document.createElement('button');
     const deleteButton = document.createElement('button');
 
     listItem.className = 'rule-item';
-    topLine.className = 'rule-topline';
-    titleGroup.className = 'rule-title-group';
     urlElement.className = 'rule-url';
-    metaElement.className = 'rule-meta';
     actionsElement.className = 'rule-actions';
+    metaElement.className = 'rule-meta';
+    editButton.className = 'edit-button';
+    editButton.type = 'button';
+    editButton.textContent = 'Edit';
+    editButton.setAttribute('aria-label', `Edit rule for ${rule.baseUrl}`);
     deleteButton.className = 'delete-button';
     deleteButton.type = 'button';
     deleteButton.textContent = 'Delete';
@@ -151,27 +173,11 @@ const renderRules = async (): Promise<void> => {
 
     urlElement.textContent = rule.baseUrl;
     metaElement.textContent = toSelectorPreview(rule.selectors);
-    titleGroup.append(urlElement);
+    listItem.append(urlElement);
 
-    if (rule.isReadOnly) {
-      const badgeElement = document.createElement('span');
-
-      badgeElement.className = 'rule-badge';
-      badgeElement.textContent = 'Built-in';
-      badgeElement.setAttribute('aria-label', `Built-in rule for ${rule.baseUrl}`);
-      titleGroup.append(badgeElement);
-    } else {
-      const editButton = document.createElement('button');
-
-      editButton.className = 'edit-button';
-      editButton.type = 'button';
-      editButton.textContent = 'Edit';
-      editButton.setAttribute('aria-label', `Edit rule for ${rule.baseUrl}`);
-      editButton.addEventListener('click', () => {
-        startEditingRule(rule);
-      });
-      actionsElement.append(editButton);
-    }
+    editButton.addEventListener('click', () => {
+      void startEditingRule(rule.id);
+    });
 
     deleteButton.addEventListener('click', async () => {
       try {
@@ -189,9 +195,8 @@ const renderRules = async (): Promise<void> => {
       }
     });
 
-    actionsElement.append(deleteButton);
-    topLine.append(titleGroup, actionsElement);
-    listItem.append(topLine, metaElement);
+    actionsElement.append(editButton, deleteButton);
+    listItem.append(actionsElement, metaElement);
     ruleListElement.append(listItem);
   });
 };

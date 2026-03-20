@@ -4,7 +4,7 @@ export default defineManifest({
   manifest_version: 3,
   name: 'uBlock Banner Block',
   description: 'Removes anti-adblock modals on configured sites and restores page scrolling.',
-  version: '0.1.0',
+  version: '1.0.3',
   permissions: ['activeTab', 'storage'],
   background: {
     service_worker: 'src/background/service-worker.ts',

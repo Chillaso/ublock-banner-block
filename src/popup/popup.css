@@ -210,23 +210,11 @@ button:focus-visible {
   background: rgba(255, 255, 255, 0.76);
 }
 
-.rule-topline {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  align-items: start;
-}
-
 .rule-actions {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
-  justify-content: end;
-}
-
-.rule-title-group {
-  display: grid;
-  gap: 6px;
+  align-items: center;
 }
 
 .rule-url {
@@ -244,18 +232,6 @@ button:focus-visible {
   padding: 8px 12px;
   color: #fff7ed;
   background: linear-gradient(135deg, #c2410c 0%, #9a3412 100%);
-}
-
-.rule-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 8px 12px;
-  border-radius: 999px;
-  background: rgba(17, 94, 89, 0.12);
-  color: var(--accent-strong);
-  font-size: 12px;
-  font-weight: 700;
-  white-space: nowrap;
 }
 
 .empty-state {
