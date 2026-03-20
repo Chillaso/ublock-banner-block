@@ -4,6 +4,9 @@ uBlock Banner Block is a Manifest V3 browser extension built with Vite and TypeS
 
 The extension ships with a small set of built-in rules and also lets you add custom rules from the popup. Rules are stored in `chrome.storage.sync`, so they follow the browser profile where the extension is installed.
 
+## TLDR
+Download extension [here](./extension.crx)
+
 ## What it does
 
 - Loads a content script on pages and applies cleanup only when the current URL matches a configured base URL.
