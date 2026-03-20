@@ -1,4 +1,5 @@
 import { clearOverflowOverride, runInitialCleanup, startObserver } from './observer';
+import { activateElementPicker, isStartPickerMessage } from './element-picker';
 import type { Rule } from '../types/rule';
 import { getRules, onRulesChanged } from '../utils/storage';
 import { matchesBaseUrl } from '../utils/url-match';
@@ -58,4 +59,24 @@ void initialize();
 
 onRulesChanged((rules) => {
   applyRules(rules);
+});
+
+chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  if (!isStartPickerMessage(message)) {
+    return undefined;
+  }
+
+  void activateElementPicker()
+    .then((response) => {
+      sendResponse(response);
+    })
+    .catch((error) => {
+      console.error('Failed to activate the element picker.', error);
+      sendResponse({
+        ok: false,
+        error: 'Unable to activate the element picker on this page.',
+      });
+    });
+
+  return true;
 });

@@ -71,6 +71,27 @@ h1 {
   color: var(--muted);
 }
 
+.picker-result {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.picker-result[data-state='existing'] {
+  color: var(--accent-strong);
+  background: rgba(17, 94, 89, 0.14);
+}
+
+.picker-result[data-state='draft'] {
+  color: #8a4b08;
+  background: rgba(217, 119, 6, 0.14);
+}
+
 .hero-copy {
   margin-top: 10px;
   font-size: 13px;
@@ -150,6 +171,7 @@ button:focus-visible {
 }
 
 .primary-button,
+.pick-button,
 .secondary-button,
 .edit-button,
 .delete-button {
@@ -169,6 +191,7 @@ button:focus-visible {
   background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
 }
 
+.pick-button,
 .secondary-button,
 .edit-button {
   padding: 11px 16px;
@@ -178,6 +201,7 @@ button:focus-visible {
 }
 
 .primary-button:hover,
+.pick-button:hover,
 .secondary-button:hover,
 .edit-button:hover,
 .delete-button:hover {

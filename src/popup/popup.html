@@ -21,6 +21,7 @@
         <div class="panel-header">
           <h2 id="rule-form-title">Add rule</h2>
           <p>Selectors can be separated by commas or new lines.</p>
+          <p id="picker-result" class="picker-result" hidden></p>
         </div>
 
         <form id="rule-form" class="rule-form">
@@ -41,6 +42,7 @@
           </label>
 
           <div class="form-actions">
+            <button id="pick-element-button" class="pick-button" type="button">Pick element</button>
             <button id="submit-button" class="primary-button" type="submit">Save rule</button>
             <button id="cancel-edit-button" class="secondary-button" type="button" hidden>Cancel edit</button>
           </div>
